@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.dice7000.raidtrial.mixin.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "raid_trial.refmap.json",
+  "mixins": [
+    "LivingEntityMixin",
+    "MobMixin"
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

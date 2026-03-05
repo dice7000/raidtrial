@@ -35,6 +35,7 @@ public class RTItems {
     public static final RegistryObject<Item> HURT_ITEM;
     public static final RegistryObject<Item> SETHEALTH_ITEM;
     public static final RegistryObject<Item> ANOTHER_SETHEALTH_ITEM;
+    public static final RegistryObject<Item> RAIDMOB_SUMMONER_ITEM;
     static {
         EXAMPLE_BLOCK = BLOCKS.register("example_block",
                 () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.STONE)));
@@ -48,6 +49,7 @@ public class RTItems {
         HURT_ITEM = ITEMS.register("hurt_item", TestItem.HurtItem::new);
         SETHEALTH_ITEM = ITEMS.register("sethealth_item", TestItem.SetHealthItem::new);
         ANOTHER_SETHEALTH_ITEM = ITEMS.register("another_sethealth_item", TestItem.AnotherSetHealthItem::new);
+        RAIDMOB_SUMMONER_ITEM = ITEMS.register("raidmob_summoner_item", TestItem.RaidMobSummonerItem::new);
     }
 
     public static final RegistryObject<CreativeModeTab> RT_TAB = CREATIVE_MODE_TABS.register("raid_trial_tab", () ->
@@ -61,6 +63,7 @@ public class RTItems {
                 output.accept(HURT_ITEM.get());
                 output.accept(SETHEALTH_ITEM.get());
                 output.accept(ANOTHER_SETHEALTH_ITEM.get());
+                output.accept(RAIDMOB_SUMMONER_ITEM.get());
             }).build());
 
     public static void register(IEventBus eventBus) {

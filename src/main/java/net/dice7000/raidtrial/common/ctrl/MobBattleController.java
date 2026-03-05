@@ -34,7 +34,7 @@ public class MobBattleController {
     private final double fieldRadius = 30;
 
     private final Set<UUID> activeMobs = new HashSet<>();
-    private int spawnCooldown = 0; // レート制限用
+    private int spawnCooldown = 0;
 
     private enum State { IDLE, RUNNING, FINISHED }
     private State state = State.IDLE;

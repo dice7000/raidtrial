@@ -17,13 +17,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class MobMixin implements RTMixinMethod {
     @Unique private final Mob rt$tC = (Mob) (Object) this;
 
-    @Override public void raidtrial$setIsRaidMob(boolean value) {
-        rt$tC.getCapability(RTCapability.IS_RAID_MOB).ifPresent(cap -> {
-            cap.setIsRaidMob(value);
-        });
-    }
-    //@Override public boolean raidtrial$getIsRaidMob() {return RaidTrial.isRaidMob(rt$tC);}
-
     @Inject(method = "tick", at = @At("HEAD"))
     public void tickInject(CallbackInfo ci) {
         if (RTUtil.isRaidMob( rt$tC)) {

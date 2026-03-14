@@ -2,13 +2,12 @@ package net.dice7000.raidtrial.common.registry;
 
 import net.dice7000.raidtrial.RaidTrial;
 import net.dice7000.raidtrial.common.item.RaidRetireItem;
-import net.dice7000.raidtrial.common.item.RaidStartItem;
+import net.dice7000.raidtrial.common.item.RaidKeyItem;
 import net.dice7000.raidtrial.common.item.TestItem;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -37,12 +36,12 @@ public class RTItems {
     public static final RegistryObject<Item> ANOTHER_SETHEALTH_ITEM;
     public static final RegistryObject<Item> RAIDMOB_SUMMONER_ITEM;
     static {
-        EXAMPLE_BLOCK = BLOCKS.register("example_block",
+        EXAMPLE_BLOCK = BLOCKS.register("raid_pedestal",
                 () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.STONE)));
-        EXAMPLE_BLOCK_ITEM = ITEMS.register("example_block",
+        EXAMPLE_BLOCK_ITEM = ITEMS.register("raid_pedestal",
                 () -> new BlockItem(EXAMPLE_BLOCK.get(), new Item.Properties()));
-        RAID_START_ITEM = ITEMS.register("raid_start_item",
-                RaidStartItem::new);
+        RAID_START_ITEM = ITEMS.register("raid_key",
+                RaidKeyItem::new);
         RAID_RETIRE_ITEM = ITEMS.register("raid_retire_item",
                 RaidRetireItem::new);
 

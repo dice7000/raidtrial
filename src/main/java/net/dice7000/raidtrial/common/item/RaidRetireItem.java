@@ -18,7 +18,6 @@ public class RaidRetireItem extends Item {
     @Override public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pUsedHand) {
         if (!pLevel.isClientSide) {
             ServerLevel server = (ServerLevel) pLevel;
-
             MobBattleController controller = BattleManager.get(server);
             if (controller.isRunning()) {
                 controller.retire();

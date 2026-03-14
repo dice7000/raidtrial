@@ -1,6 +1,5 @@
 package net.dice7000.raidtrial.mixin.mixin;
 
-import net.dice7000.raidtrial.common.cap.RTCapability;
 import net.dice7000.raidtrial.common.util.RTUtil;
 import net.dice7000.raidtrial.mixin.method.RTMixinMethod;
 import net.minecraft.world.entity.Entity;
@@ -20,7 +19,8 @@ public abstract class MobMixin implements RTMixinMethod {
     @Inject(method = "tick", at = @At("HEAD"))
     public void tickInject(CallbackInfo ci) {
         if (RTUtil.isRaidMob( rt$tC)) {
-            if (rt$tC.getHealth() < rt$tC.getMaxHealth() && rt$tC.tickCount % 20 == 0) {
+            if (rt$tC.getHealth() < rt$tC.getMaxHealth() && rt$tC.tickCount % 20 == 0 &&
+                    (!rt$tC.isDeadOrDying() || rt$tC.isAlive())) {
                 rt$tC.heal(1.0F);
             }
         }

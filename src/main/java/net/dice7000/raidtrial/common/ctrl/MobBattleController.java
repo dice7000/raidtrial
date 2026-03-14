@@ -7,24 +7,27 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 public class MobBattleController {
     private static Logger logger = LogUtils.getLogger();
 
     private final ServerLevel level;
     private Player player;
+    private BlockPos startBlockPos;
     private Vec3 startPos;
 
     private int wave = 0;
@@ -34,6 +37,7 @@ public class MobBattleController {
     private final double fieldRadius = 30;
 
     private final Set<UUID> activeMobs = new HashSet<>();
+    private final Set<UUID> participants = new HashSet<>();
     private int spawnCooldown = 0;
 
     private enum State { IDLE, RUNNING, FINISHED }
@@ -44,19 +48,35 @@ public class MobBattleController {
         this.state = State.IDLE;
     }
 
-    public void start(Player player) {
+    public void start(Player player,BlockPos pos) {
         this.player = player;
-        this.startPos = new Vec3(player.getX(), player.getY(),player.getZ());
+        this.startBlockPos = pos;
+        this.startPos = pos.getCenter();
+        List<ServerPlayer> players = getPlayersInRange(level);
+        for (ServerPlayer serverPlayer : players) {
+            participants.add(player.getUUID());
+            serverPlayer.sendSystemMessage(Component.literal("raid started"));
+        }
         this.wave = 1;
         this.mobsPerWave = 12;
         this.spawnedThisWave = 0;
         this.activeMobs.clear();
+        level.playSound(null, startBlockPos, SoundEvents.END_PORTAL_SPAWN, SoundSource.NEUTRAL, 1.0F, 1.0F);
         this.state = State.RUNNING;
+    }
+
+    private List<ServerPlayer> getPlayersInRange(ServerLevel level) {
+        AABB box = new AABB(
+                startBlockPos.getX() - fieldRadius, startBlockPos.getY() - 10, startBlockPos.getZ() - fieldRadius,
+                startBlockPos.getX() + fieldRadius, startBlockPos.getY() + 10, startBlockPos.getZ() + fieldRadius
+        );
+        return level.getEntitiesOfClass(ServerPlayer.class, box);
     }
 
     public void retire() {
         this.player = null;
-        this.startPos = Vec3.ZERO;
+        this.startBlockPos = null;
+        this.startPos = null;
         this.wave = 0;
         this.mobsPerWave = 12;
         this.spawnedThisWave = 0;
@@ -67,6 +87,13 @@ public class MobBattleController {
             }
         }
         this.activeMobs.clear();
+        for (UUID uuid : participants) {
+            ServerPlayer player = (ServerPlayer) level.getPlayerByUUID(uuid);
+            if (player != null) {
+                player.sendSystemMessage(Component.literal("raid failed"));
+            }
+        }
+        participants.clear();
         this.state = State.IDLE;
     }
 
@@ -84,6 +111,12 @@ public class MobBattleController {
 
         cleanupDead();
 
+        checkPlayerOutOfRange(level);
+        if (participants.isEmpty() | areAllParticipantsDead(level)) {
+            retire();
+            return;
+        }
+
         if (activeMobs.isEmpty() && spawnFinishedForWave()) {
             spawnedThisWave = 0;
             player.sendSystemMessage(Component.literal("wave end"));
@@ -95,7 +128,7 @@ public class MobBattleController {
             spawnMobsGradually();
         }
 
-        showSpawnArea(level, BlockPos.containing(startPos), fieldRadius);
+        showArea(level, BlockPos.containing(startPos), fieldRadius);
     }
 
     private void onFinished() {
@@ -103,7 +136,7 @@ public class MobBattleController {
         wave = 0;
     }
 
-    private void showSpawnArea(ServerLevel level, BlockPos center, double radius) {
+    private void showArea(ServerLevel level, BlockPos center, double radius) {
         int points = 240;
         for (int i = 0; i < points; i++) {
             double angle = 2 * Math.PI * i / points;
@@ -136,6 +169,43 @@ public class MobBattleController {
         mobsPerWave = 10 + (wave * 2);
         activeMobs.clear();
     }
+
+    private boolean areAllParticipantsDead(ServerLevel level) {
+        for (UUID uuid : participants) {
+            ServerPlayer player = (ServerPlayer) level.getPlayerByUUID(uuid);
+            if (player != null && !player.isDeadOrDying()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void checkPlayerOutOfRange(ServerLevel level) {
+        Iterator<UUID> it = participants.iterator();
+
+        while (it.hasNext()) {
+            UUID uuid = it.next();
+            ServerPlayer player = (ServerPlayer) level.getPlayerByUUID(uuid);
+
+            if (player == null) {
+                it.remove();
+                continue;
+            }
+
+            if (isOutsideRange(player)) {
+                it.remove();
+                player.sendSystemMessage(Component.literal("you were retired because you left the battle area"));
+            }
+        }
+    }
+    private boolean isOutsideRange(ServerPlayer player) {
+        double dx = player.getX() - (startBlockPos.getX() + 0.5);
+        double dz = player.getZ() - (startBlockPos.getZ() + 0.5);
+        double distSq = dx * dx + dz * dz;
+        double battleFieldRadius = fieldRadius + Math.max(fieldRadius, 10);
+        return distSq > battleFieldRadius * battleFieldRadius;
+    }
+
 
     private void spawnMobsGradually() {
         if (spawnCooldown > 0) {

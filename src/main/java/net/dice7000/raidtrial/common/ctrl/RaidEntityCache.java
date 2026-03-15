@@ -2,12 +2,10 @@ package net.dice7000.raidtrial.common.ctrl;
 
 import com.mojang.logging.LogUtils;
 import net.dice7000.raidtrial.common.registry.RTRegistry;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.*;
-import net.minecraft.world.entity.monster.warden.Warden;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.slf4j.Logger;
 
@@ -15,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RaidEntityCache {
-    private static Logger logger = LogUtils.getLogger();
+    private static final Logger logger = LogUtils.getLogger();
 
     private static final List<EntityType<? extends Mob>> VANILLA_MONSTERS = new ArrayList<>();
     private static final List<EntityType<? extends Mob>> ALL_MONSTERS = new ArrayList<>();
@@ -24,36 +22,35 @@ public class RaidEntityCache {
     public static void buildCache(ServerLevel level) {
         logger.info("start BuildCache");
         VANILLA_MONSTERS.clear();
-        logger.info("cleared Vanilla Monsters");
         ALL_MONSTERS.clear();
-        logger.info("cleared Mod Monsters");
         BOSSES.clear();
-        logger.info("cleared Bosses");
+        logger.info("cleared All Mob Cache List");
 
         for (EntityType<?> type : ForgeRegistries.ENTITY_TYPES.getValues()) {
             //logger.info("SPAM IS HERE!!!!!!!!!!!!!");
             Entity entity = type.create(level);
 
             if (!(entity instanceof Mob)) {
-                logger.info("continue because type isn't mob on buildCache");
+                logger.debug("continue build Cache because type isn't mob");
                 continue;
             }
 
+            @SuppressWarnings("unchecked")
             EntityType<? extends Mob> living = (EntityType<? extends Mob>) type;
 
             if (living.getCategory() != MobCategory.MONSTER) {
-                logger.info("continue because MobCategory isn't monster on buildCache");
+                logger.debug("continue build Cache because MobCategory isn't monster");
                 continue;
             }
 
             ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(type);
             if (id == null) {
-                logger.info("continue because id is null on buildCache");
+                logger.debug("continue build Cache because id is null");
                 continue;
             }
 
             boolean isVanilla = id.getNamespace().equals("minecraft");
-            boolean isBoss = type.is(RTRegistry.FORGE_BOSSES) | entity instanceof Warden;
+            boolean isBoss = type.is(RTRegistry.FORGE_BOSSES) || !(entity instanceof EnderDragon);
 
             if (isBoss) {
                 BOSSES.add(living);

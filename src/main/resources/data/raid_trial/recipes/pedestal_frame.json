@@ -1,0 +1,25 @@
+{
+  "type":"minecraft:crafting_shaped",
+  "category":"misc",
+  "key":{
+    "D":{
+      "item":"minecraft:diamond"
+    },
+    "G":{
+      "item":"minecraft:gold_ingot"
+    },
+    "I":{
+      "item":"minecraft:iron_ingot"
+    }
+  },
+  "pattern":[
+    "GIG",
+    "IDI",
+    "GIG"
+  ],
+  "result":{
+    "item":"raid_trial:pedestal_frame"
+  },
+
+  "show_notification": true
+}

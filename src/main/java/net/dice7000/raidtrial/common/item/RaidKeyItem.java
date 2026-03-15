@@ -29,7 +29,7 @@ public class RaidKeyItem extends Item {
         BlockPos pos = context.getClickedPos();
         BlockState state = level.getBlockState(pos);
 
-        if (state.is(RTItems.EXAMPLE_BLOCK.get())) {
+        if (state.is(RTItems.RAID_PEDESTAL_BLOCK.get())) {
             MobBattleController controller = BattleManager.get(server);
             if (!controller.isRunning()) {
                 controller.start(player, pos);

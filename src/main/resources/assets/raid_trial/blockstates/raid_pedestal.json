@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "raid_trial:block/raid_pedestal"
+    }
+  }
+}

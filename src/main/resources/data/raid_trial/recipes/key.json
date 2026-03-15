@@ -1,0 +1,22 @@
+{
+  "type":"minecraft:crafting_shaped",
+  "category":"misc",
+  "key":{
+    "G":{
+      "item":"minecraft:gold_ingot"
+    },
+    "C":{
+      "item":"minecraft:copper_ingot"
+    }
+  },
+  "pattern":[
+    "G",
+    "C",
+    "C"
+  ],
+  "result":{
+    "item":"raid_trial:raid_key"
+  },
+
+  "show_notification": true
+}

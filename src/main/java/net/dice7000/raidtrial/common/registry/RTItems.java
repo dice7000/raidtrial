@@ -11,7 +11,6 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -27,26 +26,24 @@ public class RTItems {
         CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, RaidTrial.MOD_ID);
     }
 
-    public static final RegistryObject<Block> EXAMPLE_BLOCK;
-    public static final RegistryObject<Item> EXAMPLE_BLOCK_ITEM;
+    public static final RegistryObject<Block> RAID_PEDESTAL_BLOCK;
+    public static final RegistryObject<Item> RAID_PEDESTAL_BLOCK_ITEM;
     public static final RegistryObject<Item> RAID_START_ITEM;
     public static final RegistryObject<Item> RAID_RETIRE_ITEM;
-    public static final RegistryObject<Item> HURT_ITEM;
-    public static final RegistryObject<Item> SETHEALTH_ITEM;
     public static final RegistryObject<Item> ANOTHER_SETHEALTH_ITEM;
     public static final RegistryObject<Item> RAIDMOB_SUMMONER_ITEM;
-    static {
-        EXAMPLE_BLOCK = BLOCKS.register("raid_pedestal",
-                () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.STONE)));
-        EXAMPLE_BLOCK_ITEM = ITEMS.register("raid_pedestal",
-                () -> new BlockItem(EXAMPLE_BLOCK.get(), new Item.Properties()));
-        RAID_START_ITEM = ITEMS.register("raid_key",
-                RaidKeyItem::new);
-        RAID_RETIRE_ITEM = ITEMS.register("raid_retire_item",
-                RaidRetireItem::new);
+    public static final RegistryObject<Item> RAID_PEDESTAL_FRAME_ITEM;
 
-        HURT_ITEM = ITEMS.register("hurt_item", TestItem.HurtItem::new);
-        SETHEALTH_ITEM = ITEMS.register("sethealth_item", TestItem.SetHealthItem::new);
+    static {
+        RAID_PEDESTAL_BLOCK = BLOCKS.register("raid_pedestal",
+                () -> new Block(BlockBehaviour.Properties.of()));
+        RAID_PEDESTAL_BLOCK_ITEM = ITEMS.register("raid_pedestal",
+                () -> new BlockItem(RAID_PEDESTAL_BLOCK.get(), new Item.Properties()));
+        RAID_START_ITEM = ITEMS.register("raid_key", RaidKeyItem::new);
+        RAID_PEDESTAL_FRAME_ITEM = ITEMS.register("pedestal_frame",
+                () -> new Item(new Item.Properties()));
+        RAID_RETIRE_ITEM = ITEMS.register("raid_retire_item", RaidRetireItem::new);
+
         ANOTHER_SETHEALTH_ITEM = ITEMS.register("another_sethealth_item", TestItem.AnotherSetHealthItem::new);
         RAIDMOB_SUMMONER_ITEM = ITEMS.register("raidmob_summoner_item", TestItem.RaidMobSummonerItem::new);
     }
@@ -56,11 +53,9 @@ public class RTItems {
             .title(Component.literal("Raid Trial"))
             .icon(() -> RAID_START_ITEM.get().getDefaultInstance())
             .displayItems((parameters, output) -> {
-                output.accept(EXAMPLE_BLOCK_ITEM.get());
+                output.accept(RAID_PEDESTAL_BLOCK_ITEM.get());
                 output.accept(RAID_START_ITEM.get());
                 output.accept(RAID_RETIRE_ITEM.get());
-                output.accept(HURT_ITEM.get());
-                output.accept(SETHEALTH_ITEM.get());
                 output.accept(ANOTHER_SETHEALTH_ITEM.get());
                 output.accept(RAIDMOB_SUMMONER_ITEM.get());
             }).build());

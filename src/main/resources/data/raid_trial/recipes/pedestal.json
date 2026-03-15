@@ -1,0 +1,22 @@
+{
+  "type":"minecraft:crafting_shaped",
+  "category":"misc",
+  "key":{
+    "F":{
+      "item":"raid_trial:pedestal_frame"
+    },
+    "C":{
+      "item":"minecraft:copper_ingot"
+    }
+  },
+  "pattern":[
+    "CFF",
+    "FCF",
+    "FFC"
+  ],
+  "result":{
+    "item":"raid_trial:raid_pedestal"
+  },
+
+  "show_notification": true
+}

@@ -9,6 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.LevelWriter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -53,6 +54,7 @@ public class RTItems {
             .title(Component.literal("Raid Trial"))
             .icon(() -> RAID_START_ITEM.get().getDefaultInstance())
             .displayItems((parameters, output) -> {
+                output.accept(RAID_PEDESTAL_FRAME_ITEM.get());
                 output.accept(RAID_PEDESTAL_BLOCK_ITEM.get());
                 output.accept(RAID_START_ITEM.get());
                 output.accept(RAID_RETIRE_ITEM.get());

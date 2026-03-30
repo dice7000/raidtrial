@@ -6,7 +6,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 
 @Mod.EventBusSubscriber(modid = RaidTrial.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
-public class Config {
+public class RTConfig {
     private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
 
     private static final ForgeConfigSpec.IntValue MAX_WAVE =
@@ -14,15 +14,20 @@ public class Config {
                     .defineInRange("MaxWave", 10, 1, Integer.MAX_VALUE);
     private static final ForgeConfigSpec.IntValue MOB_PER_WAVE =
             BUILDER.comment("Number of mobs per wave1. Default: 12")
-                    .defineInRange("MobsPerWave", 12, 1, Integer.MAX_VALUE);
+                    .defineInRange("MobsPerWave", 10, 1, Integer.MAX_VALUE);
+    private static final ForgeConfigSpec.IntValue FIELD_RADIUS =
+            BUILDER.comment("Raid field radius. Default: 30")
+                    .defineInRange("FieldRadius", 30, 10, Integer.MAX_VALUE);
 
     static final ForgeConfigSpec SPEC = BUILDER.build();
 
-    public static int maxWave;
-    public static int mobsPerWave;
+    public static int configMaxWave = 10;
+    public static int configMobsPerWave = 10;
+    public static int configFieldRadius = 30;
 
     @SubscribeEvent static void onLoad(final ModConfigEvent event) {
-        maxWave = MAX_WAVE.get();
-        mobsPerWave = MOB_PER_WAVE.get();
+        configMaxWave = MAX_WAVE.get();
+        configMobsPerWave = MOB_PER_WAVE.get();
+        configFieldRadius = FIELD_RADIUS.get();
     }
 }

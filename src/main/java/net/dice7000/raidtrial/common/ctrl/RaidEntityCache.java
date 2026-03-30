@@ -12,22 +12,23 @@ import org.slf4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 
+import static net.dice7000.raidtrial.common.ctrl.MobBattleController.WaveType.*;
+
 public class RaidEntityCache {
     private static final Logger logger = LogUtils.getLogger();
 
     private static final List<EntityType<? extends Mob>> VANILLA_MONSTERS = new ArrayList<>();
-    private static final List<EntityType<? extends Mob>> ALL_MONSTERS = new ArrayList<>();
+    private static final List<EntityType<? extends Mob>> ALL_MOD_MONSTERS = new ArrayList<>();
     private static final List<EntityType<? extends Mob>> BOSSES = new ArrayList<>();
 
     public static void buildCache(ServerLevel level) {
         logger.info("start BuildCache");
         VANILLA_MONSTERS.clear();
-        ALL_MONSTERS.clear();
+        ALL_MOD_MONSTERS.clear();
         BOSSES.clear();
         logger.info("cleared All Mob Cache List");
 
         for (EntityType<?> type : ForgeRegistries.ENTITY_TYPES.getValues()) {
-            //logger.info("SPAM IS HERE!!!!!!!!!!!!!");
             Entity entity = type.create(level);
 
             if (!(entity instanceof Mob)) {
@@ -49,35 +50,54 @@ public class RaidEntityCache {
                 continue;
             }
 
+            if (entity instanceof EnderDragon) continue;
+
             boolean isVanilla = id.getNamespace().equals("minecraft");
-            boolean isBoss = type.is(RTRegistry.FORGE_BOSSES) || !(entity instanceof EnderDragon);
+            boolean isBoss = type.is(RTRegistry.FORGE_BOSSES);
 
             if (isBoss) {
                 BOSSES.add(living);
             } else if (isVanilla) {
                 VANILLA_MONSTERS.add(living);
-                ALL_MONSTERS.add(living);
             } else {
-                ALL_MONSTERS.add(living);
+                ALL_MOD_MONSTERS.add(living);
             }
         }
+
+        logger.debug("vanilla monsters list: {}", VANILLA_MONSTERS);
+        logger.debug("mod monsters list: {}", ALL_MOD_MONSTERS);
+        logger.debug("boss monsters list: {}", BOSSES);
     }
 
-    public static EntityType<? extends Mob> getRandom(MobBattleController.PoolType type, ServerLevel level) {
-        List<EntityType<? extends Mob>> list = null;
-        switch (type) {
-            case VANILLA_MONSTER -> list = VANILLA_MONSTERS;
-            case ALL_MOD_MONSTER -> list = ALL_MONSTERS;
-            case BOSS_ONLY -> list = BOSSES;
+    public static EntityType<? extends Mob> getRandomFromWaveType(MobBattleController.WaveType wave, ServerLevel level) {
+        logger.debug("WaveType is {}", wave);
+        List<EntityType<? extends Mob>> list;
+
+        boolean vanilla = wave == VANILLA_MOB_ONLY || wave == VANILLA_AND_MOD_MOB;
+        boolean mod = wave == VANILLA_AND_MOD_MOB || wave == MOD_MOB_ONLY || wave == MOD_AND_BOSS_MOB;
+        boolean boss = wave == MOD_AND_BOSS_MOB || wave == BOSS_MOB_ONLY;
+
+        if (vanilla && mod) {
+            if (Math.random() < 0.2) list = VANILLA_MONSTERS; else list = ALL_MOD_MONSTERS;
+        } else if (mod && boss) {
+            if (Math.random() < 0.4) list = BOSSES; else list = ALL_MOD_MONSTERS;
+        } else if (vanilla) list = VANILLA_MONSTERS;
+        else if (mod) list = ALL_MOD_MONSTERS;
+        else if (boss) list = BOSSES;
+        else {
+            logger.info("unsupported state");
+            return EntityType.ZOMBIE;
         }
 
-        if (list == null) {
-            logger.info("list is null on getRandom in MEC");
-            System.out.println();
-            return null;
-        } else if (list.isEmpty()) {
-            logger.info("list is empty on getRandom in MEC");
-            return null;
+        if (list.isEmpty()) {
+            logger.info("list is empty");
+            return EntityType.ZOMBIE;
+        } else if (list == VANILLA_MONSTERS) {
+            logger.debug("Select from vanilla monsters");
+        } else if (list == ALL_MOD_MONSTERS) {
+            logger.debug("Select from mod monsters");
+        } else {
+            logger.debug("Select from boss monsters");
         }
         return list.get(level.random.nextInt(list.size()));
     }

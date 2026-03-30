@@ -79,6 +79,7 @@ dependencies {
 
     implementation fg.deobf("curse.maven:JEI-238222:6600311")
     implementation fg.deobf("curse.maven:Jade-324717:6855440")
+    implementation fg.deobf("curse.maven:Create-328085:7178761")
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 

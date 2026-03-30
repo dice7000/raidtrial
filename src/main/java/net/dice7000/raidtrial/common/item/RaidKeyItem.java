@@ -34,9 +34,9 @@ public class RaidKeyItem extends Item {
             if (!controller.isRunning()) {
                 controller.start(player, pos);
                 player.displayClientMessage(Component.literal("raid started"), true);
-            } else {
+            } /* else {
                 player.displayClientMessage(Component.literal("already raid"), true);
-            }
+            } */
             return InteractionResult.CONSUME;
         }
         return InteractionResult.PASS;

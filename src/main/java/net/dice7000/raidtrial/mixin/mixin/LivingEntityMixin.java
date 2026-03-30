@@ -67,4 +67,11 @@ public abstract class LivingEntityMixin implements RTMixinMethod {
             if (raidtrial$isRaidFinished) ci.cancel();
         }
     }
+
+    @Inject(method = "kill", at = @At("TAIL"))
+    public void RTKillInject(CallbackInfo ci) {
+        if (RTUtil.isRaidMob(rt$tC)) {
+            rt$tC.getEntityData().set(DATA_HEALTH_ID, 0.0F);
+        }
+    }
 }

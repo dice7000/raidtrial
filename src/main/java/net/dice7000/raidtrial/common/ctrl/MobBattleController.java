@@ -1,6 +1,7 @@
 package net.dice7000.raidtrial.common.ctrl;
 
 import com.mojang.logging.LogUtils;
+import net.dice7000.raidtrial.RTConfig;
 import net.dice7000.raidtrial.common.cap.RTCapability;
 import net.dice7000.raidtrial.mixin.method.RTMixinMethod;
 import net.minecraft.core.BlockPos;
@@ -23,7 +24,7 @@ import org.slf4j.Logger;
 import java.util.*;
 
 public class MobBattleController {
-    private static Logger logger = LogUtils.getLogger();
+    private static final Logger logger = LogUtils.getLogger();
 
     private final ServerLevel level;
     private Player player;
@@ -33,8 +34,8 @@ public class MobBattleController {
     private int wave = 0;
     private int mobsPerWave;
     private int spawnedThisWave = 0;
-    private final int maxWave = 5;
-    private final double fieldRadius = 30;
+    private static final int maxWave = RTConfig.configMaxWave;
+    private final double fieldRadius = RTConfig.configFieldRadius;
 
     private final Set<UUID> activeMobs = new HashSet<>();
     private final Set<UUID> participants = new HashSet<>();
@@ -45,7 +46,6 @@ public class MobBattleController {
 
     public MobBattleController(ServerLevel level) {
         this.level = level;
-        this.state = State.IDLE;
     }
 
     public void start(Player player,BlockPos pos) {
@@ -58,11 +58,12 @@ public class MobBattleController {
             serverPlayer.sendSystemMessage(Component.literal("raid started"));
         }
         this.wave = 1;
-        this.mobsPerWave = 12;
+        this.mobsPerWave = RTConfig.configMobsPerWave + 2;
         this.spawnedThisWave = 0;
         this.activeMobs.clear();
         level.playSound(null, startBlockPos, SoundEvents.END_PORTAL_SPAWN, SoundSource.NEUTRAL, 1.0F, 1.0F);
         this.state = State.RUNNING;
+        logger.info("maxWave: {}, mobsPerWave: {}", maxWave, mobsPerWave);
     }
 
     private List<ServerPlayer> getPlayersInRange(ServerLevel level) {
@@ -78,7 +79,7 @@ public class MobBattleController {
         this.startBlockPos = null;
         this.startPos = null;
         this.wave = 0;
-        this.mobsPerWave = 12;
+        this.mobsPerWave = RTConfig.configMobsPerWave;
         this.spawnedThisWave = 0;
         for (UUID uuid : this.activeMobs) {
             Entity entity = level.getEntity(uuid);
@@ -137,7 +138,7 @@ public class MobBattleController {
     }
 
     private void showArea(ServerLevel level, BlockPos center, double radius) {
-        int points = 240;
+        int points = (int) (radius * 8);
         for (int i = 0; i < points; i++) {
             double angle = 2 * Math.PI * i / points;
             double x = center.getX() + 0.5 + Math.cos(angle) * radius;
@@ -227,8 +228,7 @@ public class MobBattleController {
         spawnCooldown = 10;
     }
     private Mob createMob() {
-        WaveMobPool pool = getPoolForWave(wave);
-        EntityType<? extends Mob> type = pool.getRandom(level);
+        EntityType<? extends Mob> type = getRandomFromWaveInt(wave, level);
         if (type == null) {
             logger.info("type is null on createMob");
             return null;
@@ -242,16 +242,6 @@ public class MobBattleController {
         mob.moveTo(pos.x, pos.y, pos.z, level.random.nextFloat() * 360F, 0);
         applyWaveBuffs(mob);
         return mob;
-    }
-    private WaveMobPool getPoolForWave(int wave) {
-        return switch (wave) {
-            case 1 -> WaveMobPool.WAVE1;
-            case 2 -> WaveMobPool.WAVE2;
-            case 3 -> WaveMobPool.WAVE3;
-            case 4 -> WaveMobPool.WAVE4;
-            case 5 -> WaveMobPool.WAVE5;
-            default -> WaveMobPool.WAVE1;
-        };
     }
     private Vec3 randomAroundPlayer(double min, double max) {
         double dist = min + level.random.nextDouble() * (max - min);
@@ -287,23 +277,22 @@ public class MobBattleController {
     }
 
 
-    public enum WaveMobPool {
-        WAVE1(PoolType.VANILLA_MONSTER),
-        WAVE2(PoolType.VANILLA_MONSTER),
-        WAVE3(PoolType.ALL_MOD_MONSTER),
-        WAVE4(PoolType.ALL_MOD_MONSTER),
-        WAVE5(PoolType.BOSS_ONLY);
-        public final PoolType type;
-
-        WaveMobPool(PoolType type) {
-            this.type = type;
-        }
-
-        public EntityType<? extends Mob> getRandom(ServerLevel level) {
-            return RaidEntityCache.getRandom(type, level);
-        }
+    public static EntityType<? extends Mob> getRandomFromWaveInt(int wave, ServerLevel level) {
+        return RaidEntityCache.getRandomFromWaveType(WaveType.calculateWaveType(wave), level);
     }
 
-    public enum PoolType { VANILLA_MONSTER, ALL_MOD_MONSTER, BOSS_ONLY }
+    public enum WaveType {
+        VANILLA_MOB_ONLY, VANILLA_AND_MOD_MOB, MOD_MOB_ONLY, MOD_AND_BOSS_MOB, BOSS_MOB_ONLY;
+
+        public static WaveType calculateWaveType(int wave) {
+            float progress = (float) wave / maxWave;
+            logger.debug("wave: {}, maxWave: {}, progress: {}", wave, maxWave, progress);
+                 if (progress <= 0.2) return VANILLA_MOB_ONLY;
+            else if (progress <= 0.4) return VANILLA_AND_MOD_MOB;
+            else if (progress <= 0.6) return MOD_MOB_ONLY;
+            else if (progress <= 0.8) return MOD_AND_BOSS_MOB;
+            else                      return BOSS_MOB_ONLY;
+        }
+    }
 }
 

@@ -21,6 +21,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.event.level.NoteBlockEvent;
 import org.slf4j.Logger;
 
 import java.util.*;
@@ -146,10 +147,19 @@ public class MobBattleController {
 
         cleanupDead();
 
-        checkPlayerOutOfRange(level);
+        //checkPlayerOutOfRange(level);
         if (participants.isEmpty() | areAllParticipantsDead(level)) {
             retire();
             return;
+        }
+        for (UUID uuid : participants) {
+            Player player = (Player) level.getEntity(uuid);
+            if (player != null) {
+                if (isOutsideRange((ServerPlayer) player)) {
+                    player.teleportTo
+                            (startBlockPos.getX() + 0.5, startBlockPos.getY() + 1.1, startBlockPos.getZ() + 0.5);
+                }
+            }
         }
 
         if (activeMobs.isEmpty() && spawnFinishedForWave()) {

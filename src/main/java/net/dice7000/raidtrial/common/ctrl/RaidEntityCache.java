@@ -6,6 +6,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.monster.Monster;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.slf4j.Logger;
 
@@ -39,7 +41,7 @@ public class RaidEntityCache {
             @SuppressWarnings("unchecked")
             EntityType<? extends Mob> living = (EntityType<? extends Mob>) type;
 
-            if (living.getCategory() != MobCategory.MONSTER) {
+            if (living.getCategory() != MobCategory.MONSTER || !(entity instanceof Enemy)) {
                 logger.debug("continue build Cache because MobCategory isn't monster");
                 continue;
             }

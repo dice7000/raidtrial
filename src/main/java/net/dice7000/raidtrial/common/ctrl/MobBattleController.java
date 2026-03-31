@@ -7,10 +7,12 @@ import net.dice7000.raidtrial.mixin.method.RTMixinMethod;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.BossEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
@@ -26,7 +28,7 @@ import java.util.*;
 public class MobBattleController {
     private static final Logger logger = LogUtils.getLogger();
 
-    private final ServerLevel level;
+    private ServerLevel level;
     private Player player;
     private BlockPos startBlockPos;
     private Vec3 startPos;
@@ -41,29 +43,49 @@ public class MobBattleController {
     private final Set<UUID> participants = new HashSet<>();
     private int spawnCooldown = 0;
 
+    private final ServerBossEvent bossBar;
+
     private enum State { IDLE, RUNNING, FINISHED }
     private State state = State.IDLE;
 
     public MobBattleController(ServerLevel level) {
         this.level = level;
+        bossBar = new ServerBossEvent(
+                Component.literal("not started"),
+                BossEvent.BossBarColor.RED,
+                BossEvent.BossBarOverlay.PROGRESS
+        );
+        bossBar.setVisible(true);
     }
 
-    public void start(Player player,BlockPos pos) {
+    public void start(Player player, BlockPos pos, ServerLevel level) {
+        logger.debug("starting");
+        this.level = level;
         this.player = player;
         this.startBlockPos = pos;
         this.startPos = pos.getCenter();
         List<ServerPlayer> players = getPlayersInRange(level);
-        for (ServerPlayer serverPlayer : players) {
-            participants.add(player.getUUID());
-            serverPlayer.sendSystemMessage(Component.literal("raid started"));
-        }
         this.wave = 1;
         this.mobsPerWave = RTConfig.configMobsPerWave + 2;
         this.spawnedThisWave = 0;
         this.activeMobs.clear();
-        level.playSound(null, startBlockPos, SoundEvents.END_PORTAL_SPAWN, SoundSource.NEUTRAL, 1.0F, 1.0F);
+        bossBar.setVisible(true);
+        for (ServerPlayer serverPlayer : players) {
+            participants.add(player.getUUID());
+            if (!(serverPlayer == null)) {
+                bossBar.addPlayer(serverPlayer);
+            }
+        }
+        if (player == null || startBlockPos == null || startPos == null || participants.isEmpty()) {
+            logger.error("starting failed because required information is null");
+            return;
+        }
+        level.playSound(null, startBlockPos, SoundEvents.END_PORTAL_SPAWN,
+                SoundSource.NEUTRAL, 1.0F, 1.0F);
+        for (UUID uuid : participants) {
+            level.getEntity(uuid).sendSystemMessage(Component.literal("raid started"));
+        }
         this.state = State.RUNNING;
-        logger.info("maxWave: {}, mobsPerWave: {}", maxWave, mobsPerWave);
     }
 
     private List<ServerPlayer> getPlayersInRange(ServerLevel level) {
@@ -71,10 +93,16 @@ public class MobBattleController {
                 startBlockPos.getX() - fieldRadius, startBlockPos.getY() - 10, startBlockPos.getZ() - fieldRadius,
                 startBlockPos.getX() + fieldRadius, startBlockPos.getY() + 10, startBlockPos.getZ() + fieldRadius
         );
+        logger.debug("get players in range with box: {}, players: {}", box, level.getEntitiesOfClass(ServerPlayer.class, box));
         return level.getEntitiesOfClass(ServerPlayer.class, box);
     }
 
     public void retire() {
+        onFinished(1);
+    }
+
+    public void onFinished(int finishCode) {
+        // finishCode: 0 = success, 1 = fail, 2 = initializetion/cleanup
         this.player = null;
         this.startBlockPos = null;
         this.startPos = null;
@@ -88,10 +116,16 @@ public class MobBattleController {
             }
         }
         this.activeMobs.clear();
+        bossBar.removeAllPlayers();
+        bossBar.setVisible(false);
         for (UUID uuid : participants) {
             ServerPlayer player = (ServerPlayer) level.getPlayerByUUID(uuid);
             if (player != null) {
-                player.sendSystemMessage(Component.literal("raid failed"));
+                if (finishCode == 1) {
+                    player.sendSystemMessage(Component.literal("raid failed"));
+                } else if (finishCode == 0) {
+                    player.sendSystemMessage(Component.literal("raid succeeded!"));
+                }
             }
         }
         participants.clear();
@@ -105,7 +139,7 @@ public class MobBattleController {
     public void tick() {
         if (state == State.IDLE) return;
         if (state == State.FINISHED) {
-            onFinished();
+            onFinished(0);
             state = State.IDLE;
             return;
         }
@@ -120,7 +154,7 @@ public class MobBattleController {
 
         if (activeMobs.isEmpty() && spawnFinishedForWave()) {
             spawnedThisWave = 0;
-            player.sendSystemMessage(Component.literal("wave end"));
+            //player.sendSystemMessage(Component.literal("wave end"));
             nextWave();
             return;
         }
@@ -130,21 +164,33 @@ public class MobBattleController {
         }
 
         showArea(level, BlockPos.containing(startPos), fieldRadius);
-    }
 
-    private void onFinished() {
-        player = null;
-        wave = 0;
+        updateBossBarProgress();
+
+        for (UUID uuid : activeMobs) {
+            Entity entity = level.getEntity(uuid);
+            Vec3 pos = entity.position();
+            double xDist = Math.abs(startBlockPos.getX() - pos.x);
+            double zDist = Math.abs(startBlockPos.getZ() - pos.z);
+            if (xDist > fieldRadius || zDist > fieldRadius) {
+                entity.teleportTo
+                        (startBlockPos.getX() + 0.5, startBlockPos.getY() + 1.1, startBlockPos.getZ() + 0.5);
+            }
+        }
     }
 
     private void showArea(ServerLevel level, BlockPos center, double radius) {
         int points = (int) (radius * 8);
         for (int i = 0; i < points; i++) {
             double angle = 2 * Math.PI * i / points;
-            double x = center.getX() + 0.5 + Math.cos(angle) * radius;
-            double z = center.getZ() + 0.5 + Math.sin(angle) * radius;
+            double x1 = center.getX() + 0.5 + Math.cos(angle) * radius;
+            double z1 = center.getZ() + 0.5 + Math.sin(angle) * radius;
+            double x2 = center.getX() + 0.5 + Math.cos(angle) * (radius + 10);
+            double z2 = center.getZ() + 0.5 + Math.sin(angle) * (radius + 10);
             double y = center.getY() + 0.1;
-            level.sendParticles(ParticleTypes.HAPPY_VILLAGER, x, y, z,
+            level.sendParticles(ParticleTypes.HAPPY_VILLAGER, x1, y, z1,
+                    1, 0, 0, 0, 0);
+            level.sendParticles(ParticleTypes.END_ROD, x2, y, z2,
                     1, 0, 0, 0, 0);
         }
     }
@@ -199,14 +245,25 @@ public class MobBattleController {
             }
         }
     }
+    public void removeParticipant(UUID uuid) {
+        participants.remove(uuid);
+        if (participants.isEmpty() | areAllParticipantsDead(level)) {
+            retire();
+        }
+    }
     private boolean isOutsideRange(ServerPlayer player) {
         double dx = player.getX() - (startBlockPos.getX() + 0.5);
         double dz = player.getZ() - (startBlockPos.getZ() + 0.5);
         double distSq = dx * dx + dz * dz;
         double battleFieldRadius = fieldRadius + Math.max(fieldRadius, 10);
-        return distSq > battleFieldRadius * battleFieldRadius;
+        return distSq > (battleFieldRadius * battleFieldRadius) + 10;
     }
 
+    public void updateBossBarProgress() {
+        float progress = (float) activeMobs.size() / (float) mobsPerWave;
+        bossBar.setProgress(progress);
+        bossBar.setName(Component.literal("Wave " + wave + " - " + activeMobs.size() + " remaining"));
+    }
 
     private void spawnMobsGradually() {
         if (spawnCooldown > 0) {

@@ -28,7 +28,7 @@ public abstract class LivingEntityMixin implements RTMixinMethod {
     @Inject(method = "setHealth", at = @At("HEAD"), cancellable = true)
     public void RTSetHealthInject(float pHealth, CallbackInfo ci) {
         if (RTUtil.isRaidMob(rt$tC)) {
-            float modifiedHealth = RTUtil.adjustHealthAmount(pHealth, getMaxHealth() / 30, getMaxHealth(), getHealth());
+            float modifiedHealth = RTUtil.adjustHealthAmount(pHealth, Math.min(getMaxHealth() / 4, 15.0F), getMaxHealth(), getHealth());
             if (raidtrial$setHealthCooldown > 0) {
                 ci.cancel();
             } else {
@@ -46,6 +46,7 @@ public abstract class LivingEntityMixin implements RTMixinMethod {
         if (RTUtil.isRaidMob(rt$tC)) {
             if (raidtrial$setHealthCooldown > 0) raidtrial$setHealthCooldown--;
             if (isAlive() && deathTime > 0) deathTime = 0;
+
         }
     }
 

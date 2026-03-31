@@ -17,13 +17,13 @@ public class RTConfig {
                     .defineInRange("MobsPerWave", 10, 1, Integer.MAX_VALUE);
     private static final ForgeConfigSpec.IntValue FIELD_RADIUS =
             BUILDER.comment("Raid field radius. Default: 30")
-                    .defineInRange("FieldRadius", 30, 10, Integer.MAX_VALUE);
+                    .defineInRange("FieldRadius", 50, 10, Integer.MAX_VALUE);
 
     static final ForgeConfigSpec SPEC = BUILDER.build();
 
     public static int configMaxWave = 10;
     public static int configMobsPerWave = 10;
-    public static int configFieldRadius = 30;
+    public static int configFieldRadius = 50;
 
     @SubscribeEvent static void onLoad(final ModConfigEvent event) {
         configMaxWave = MAX_WAVE.get();

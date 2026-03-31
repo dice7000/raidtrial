@@ -2,8 +2,10 @@ package net.dice7000.raidtrial.common.util;
 
 import net.dice7000.raidtrial.common.cap.IRaidMobCap;
 import net.dice7000.raidtrial.common.cap.RTCapability;
+import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 
 public class RTUtil {
     public static boolean isRaidMob(LivingEntity mob) {

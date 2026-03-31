@@ -36,10 +36,6 @@ public class RaidTrial {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
     }
-    @SubscribeEvent public void onServerStarting(ServerStartingEvent event) {
-        logger.info("ServerStartingEvent was fired");
-        RaidEntityCache.buildCache(event.getServer().overworld());
-    }
     @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ClientModEvents {
         @SubscribeEvent public static void onClientSetup(FMLClientSetupEvent event) {
